@@ -345,24 +345,47 @@ export default function GameTable() {
           )}
         </div>
 
-        {gameState?.status === 'waiting' && (
-          <div className="bg-black/40 backdrop-blur-md p-6 rounded-xl pointer-events-auto flex flex-col items-center gap-4">
-            <h2 className="text-2xl font-bold">Aguardando Jogadores</h2>
-            <div className="text-4xl font-mono">{gameState.players.length}/4</div>
-            {gameState.players.length >= 2 && myPlayer?.id === gameState.players[0].id && (
+      </div>
+
+      {/* Waiting Room Modal */}
+      {gameState?.status === 'waiting' && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-green-900/90 p-8 rounded-2xl border-2 border-white/10 flex flex-col items-center gap-6 shadow-2xl max-w-sm w-full mx-4">
+            <div className="flex flex-col items-center">
+              <h2 className="text-2xl font-bold text-white mb-2">Sala de Espera</h2>
+              <div className="bg-black/40 px-4 py-1 rounded-full text-yellow-400 font-mono text-sm border border-yellow-500/30">
+                {gameState.gameType.toUpperCase()}
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <div className="text-5xl font-black text-white mb-1">{gameState.players.length} <span className="text-xl text-gray-400">/ 4</span></div>
+              <div className="text-sm text-gray-400">Jogadores conectados</div>
+            </div>
+
+            {gameState.players.length >= 2 && myPlayer?.id === gameState.players[0].id ? (
               <button
                 onClick={startGame}
-                className="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-full shadow-lg transform hover:scale-105 transition-all"
+                className="w-full py-4 bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-black font-black text-xl rounded-xl shadow-[0_4px_0_rgb(161,98,7)] transition-all uppercase tracking-tight"
               >
                 INICIAR JOGO
               </button>
+            ) : (
+              <div className="text-center py-4 px-6 bg-white/5 rounded-xl border border-white/5">
+                <p className="text-sm text-yellow-500 font-medium">
+                  {gameState.players.length < 2
+                    ? "Aguardando mais jogadores..."
+                    : "Aguardando o líder iniciar..."}
+                </p>
+              </div>
             )}
-            <div className="text-sm text-gray-400">Mínimo 2 jogadores para iniciar</div>
+
+            <div className="text-[10px] text-gray-500 uppercase tracking-widest">
+              ID: {roomId}
+            </div>
           </div>
-        )}
-      </div>
-
-
+        </div>
+      )}
 
       {/* Game Over Modal */}
       {gameState?.status === 'finished' && (
@@ -457,53 +480,55 @@ export default function GameTable() {
       </div>
 
       {/* My Hand */}
-      {myPlayer && (
-        <div className="h-56 md:h-72 bg-gradient-to-t from-black/90 to-transparent flex items-end justify-center pb-4 md:pb-8 px-2 md:px-4 relative z-20 w-full overflow-hidden">
-          <Reorder.Group
-            axis="x"
-            values={localHand}
-            onReorder={setLocalHand}
-            className="flex -space-x-8 md:-space-x-12 hover:-space-x-6 md:hover:-space-x-8 transition-all duration-300 p-4 pt-12 md:p-6 md:pt-16 overflow-x-auto w-full justify-center md:justify-center min-w-min no-scrollbar"
-            style={{ maxWidth: '100vw' }}
-          >
-            {localHand.map((card) => (
-              <Reorder.Item
-                key={card.id}
-                value={card}
-                initial={{ y: 100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                whileHover={{ y: -20, zIndex: 20 }}
-                whileDrag={{ scale: 1.1, zIndex: 50 }}
-                className={`relative flex-shrink-0 ${canDiscard ? 'cursor-pointer' : ''}`}
-              >
-                <div onClick={() => handleDiscardCard(card.id)}>
-                  <CardView card={card} />
+      {
+        myPlayer && (
+          <div className="h-56 md:h-72 bg-gradient-to-t from-black/90 to-transparent flex items-end justify-center pb-4 md:pb-8 px-2 md:px-4 relative z-20 w-full overflow-hidden">
+            <Reorder.Group
+              axis="x"
+              values={localHand}
+              onReorder={setLocalHand}
+              className="flex -space-x-8 md:-space-x-12 hover:-space-x-6 md:hover:-space-x-8 transition-all duration-300 p-4 pt-12 md:p-6 md:pt-16 overflow-x-auto w-full justify-center md:justify-center min-w-min no-scrollbar"
+              style={{ maxWidth: '100vw' }}
+            >
+              {localHand.map((card) => (
+                <Reorder.Item
+                  key={card.id}
+                  value={card}
+                  initial={{ y: 100, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  whileHover={{ y: -20, zIndex: 20 }}
+                  whileDrag={{ scale: 1.1, zIndex: 50 }}
+                  className={`relative flex-shrink-0 ${canDiscard ? 'cursor-pointer' : ''}`}
+                >
+                  <div onClick={() => handleDiscardCard(card.id)}>
+                    <CardView card={card} />
+                  </div>
+                  {canDiscard && (
+                    <div className="absolute inset-0 hover:bg-red-500/20 rounded-lg transition-colors pointer-events-none" />
+                  )}
+                </Reorder.Item>
+              ))}
+            </Reorder.Group>
+
+            {isMyTurn && (
+              <div className="absolute bottom-28 md:bottom-24 right-4 md:right-10 bg-black/60 p-3 md:p-4 rounded-lg backdrop-blur text-center flex flex-col gap-2 z-30">
+                <div className="text-yellow-400 font-bold text-lg md:text-xl mb-1">SUA VEZ</div>
+                <div className="text-xs md:text-sm text-white">
+                  {gameState?.turnPhase === 'draw' ? 'Compre uma carta' : 'Descarte uma carta'}
                 </div>
-                {canDiscard && (
-                  <div className="absolute inset-0 hover:bg-red-500/20 rounded-lg transition-colors pointer-events-none" />
-                )}
-              </Reorder.Item>
-            ))}
-          </Reorder.Group>
 
-          {isMyTurn && (
-            <div className="absolute bottom-28 md:bottom-24 right-4 md:right-10 bg-black/60 p-3 md:p-4 rounded-lg backdrop-blur text-center flex flex-col gap-2 z-30">
-              <div className="text-yellow-400 font-bold text-lg md:text-xl mb-1">SUA VEZ</div>
-              <div className="text-xs md:text-sm text-white">
-                {gameState?.turnPhase === 'draw' ? 'Compre uma carta' : 'Descarte uma carta'}
+                <button
+                  onClick={handleDeclareVictory}
+                  className="mt-1 md:mt-2 px-3 md:px-4 py-1 md:py-2 bg-green-600 hover:bg-green-500 text-white font-bold text-sm md:text-base rounded shadow-lg animate-pulse"
+                >
+                  BATER!
+                </button>
               </div>
-
-              <button
-                onClick={handleDeclareVictory}
-                className="mt-1 md:mt-2 px-3 md:px-4 py-1 md:py-2 bg-green-600 hover:bg-green-500 text-white font-bold text-sm md:text-base rounded shadow-lg animate-pulse"
-              >
-                BATER!
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+            )}
+          </div>
+        )
+      }
+    </div >
   );
 }
 
