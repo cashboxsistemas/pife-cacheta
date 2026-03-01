@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { socket, connectSocket, disconnectSocket } from '../services/socket';
 import { GameState, Card, Player } from '../types/game';
-import { motion, AnimatePresence, Reorder } from 'motion/react';
+import { motion, Reorder } from 'motion/react';
 
 export default function GameTable() {
   const [isConnected, setIsConnected] = useState(false);
@@ -14,12 +14,6 @@ export default function GameTable() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
   const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  };
 
   useEffect(() => {
     connectSocket();
@@ -45,7 +39,7 @@ export default function GameTable() {
     }
 
     function onError(msg: string) {
-      showToast(msg, 'error');
+      alert(msg);
     }
 
     function onGameOver({ winnerName }: { winnerName: string }) {
@@ -94,18 +88,25 @@ export default function GameTable() {
     const serverHand = myPlayer.hand;
 
     setLocalHand(prev => {
+      // If first load or empty, just use server hand
       if (prev.length === 0) return serverHand;
+
+      // Keep existing cards in their current order
       const existingIds = new Set(prev.map(c => c.id));
       const newCards = serverHand.filter(c => !existingIds.has(c.id));
+
+      // Filter out cards that were removed (discarded)
       const serverIds = new Set(serverHand.map(c => c.id));
       const currentCards = prev.filter(c => serverIds.has(c.id));
+
+      // Append new cards at the end
       return [...currentCards, ...newCards];
     });
   }, [gameState]);
 
   const createRoom = (type: 'pife' | 'cacheta') => {
     if (!playerName) {
-      showToast('Por favor, digite seu nome!', 'error');
+      alert('Por favor, digite seu nome!');
       return;
     }
     socket.emit('create_room', { type, playerName });
@@ -113,7 +114,7 @@ export default function GameTable() {
 
   const joinRoom = () => {
     if (!playerName) {
-      showToast('Por favor, digite seu nome!', 'error');
+      alert('Por favor, digite seu nome!');
       return;
     }
     if (joinInput) {
@@ -127,17 +128,21 @@ export default function GameTable() {
     }
   };
 
+  // Helper to get current player
   const myPlayer = gameState?.players.find(p => p.id === socket.id);
   const isMyTurn = myPlayer?.isTurn;
   const canDraw = isMyTurn && gameState?.turnPhase === 'draw';
   const canDiscard = isMyTurn && gameState?.turnPhase === 'discard';
 
+  // Sound Effects
   const playSound = (type: 'draw' | 'discard' | 'shuffle' | 'victory') => {
     const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
+
     oscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
+
     const now = audioCtx.currentTime;
 
     switch (type) {
@@ -160,6 +165,7 @@ export default function GameTable() {
         oscillator.stop(now + 0.15);
         break;
       case 'shuffle':
+        // Simulating a shuffle sound with noise buffer would be complex, just a simple trill
         oscillator.type = 'square';
         oscillator.frequency.setValueAtTime(200, now);
         oscillator.frequency.linearRampToValueAtTime(800, now + 0.3);
@@ -169,6 +175,7 @@ export default function GameTable() {
         oscillator.stop(now + 0.3);
         break;
       case 'victory':
+        // Major chord arpeggio
         [440, 554, 659, 880].forEach((freq, i) => {
           const osc = audioCtx.createOscillator();
           const gn = audioCtx.createGain();
@@ -181,7 +188,7 @@ export default function GameTable() {
           osc.start(now + i * 0.1);
           osc.stop(now + i * 0.1 + 0.5);
         });
-        break;
+        return; // Custom handling
     }
   };
 
@@ -237,7 +244,8 @@ export default function GameTable() {
 
   if (!roomId) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-green-800 text-white p-4 text-center overflow-hidden">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-green-800 text-white p-4 text-center">
+
         <h1 className="text-5xl font-black mb-8 italic tracking-tighter text-yellow-500 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] uppercase">
           Nick’s Deck
         </h1>
@@ -310,31 +318,13 @@ export default function GameTable() {
             INSTALAR APP
           </button>
         )}
-
-        <AnimatePresence>
-          {toast && (
-            <motion.div
-              initial={{ y: 50, opacity: 0, x: '-50%' }}
-              animate={{ y: 0, opacity: 1, x: '-50%' }}
-              exit={{ y: 50, opacity: 0, x: '-50%' }}
-              className={`fixed bottom-10 left-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 backdrop-blur-xl min-w-[300px] justify-center
-                ${toast.type === 'error' ? 'bg-red-900/90 text-white' : 'bg-black/80 text-yellow-500'}
-              `}
-            >
-              {toast.type === 'error' && (
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-              )}
-              <span className="font-bold text-sm tracking-tight">{toast.message}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen h-[100dvh] bg-green-800 text-white overflow-hidden relative">
-      {isPortrait && gameState?.status === 'playing' && (
+    <div className="flex flex-col h-screen bg-green-800 text-white overflow-hidden relative">
+      {isPortrait && (
         <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-6 text-center lg:hidden">
           <div className="animate-bounce mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="yellow" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-90"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></svg>
@@ -343,7 +333,6 @@ export default function GameTable() {
           <p className="text-gray-400">Para uma melhor experiência, use o modo paisagem.</p>
         </div>
       )}
-
       {/* Header / Info Bar */}
       <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-10 pointer-events-none">
         <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg pointer-events-auto">
@@ -355,64 +344,25 @@ export default function GameTable() {
             </div>
           )}
         </div>
+
+        {gameState?.status === 'waiting' && (
+          <div className="bg-black/40 backdrop-blur-md p-6 rounded-xl pointer-events-auto flex flex-col items-center gap-4">
+            <h2 className="text-2xl font-bold">Aguardando Jogadores</h2>
+            <div className="text-4xl font-mono">{gameState.players.length}/4</div>
+            {gameState.players.length >= 2 && myPlayer?.id === gameState.players[0].id && (
+              <button
+                onClick={startGame}
+                className="px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-full shadow-lg transform hover:scale-105 transition-all"
+              >
+                INICIAR JOGO
+              </button>
+            )}
+            <div className="text-sm text-gray-400">Mínimo 2 jogadores para iniciar</div>
+          </div>
+        )}
       </div>
 
-      {/* Waiting Room Modal */}
-      {gameState?.status === 'waiting' && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-md">
-          <div className="bg-green-900/95 p-4 rounded-[2rem] border-2 border-white/10 flex flex-col items-center gap-3 shadow-2xl max-w-sm w-full mx-4 overflow-y-auto max-h-[90dvh]">
-            <div className="w-full flex flex-col items-center gap-1 text-center">
-              <span className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold">Código da Sala</span>
-              <div className="text-4xl font-mono font-black text-yellow-500 tracking-tighter bg-black/40 px-4 py-3 rounded-2xl border border-white/10 shadow-inner">
-                {roomId}
-              </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(roomId || '');
-                  showToast('Código copiado!', 'success');
-                }}
-                className="mt-2 flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold transition-all active:scale-95 border border-white/5 uppercase"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
-                Copiar Código
-              </button>
-            </div>
 
-            <div className="w-full h-px bg-white/10" />
-
-            <div className="flex flex-col items-center gap-4 w-full">
-              <div className="flex flex-col items-center">
-                <div className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/30 mb-2">
-                  {gameState.gameType}
-                </div>
-                <h2 className="text-xl font-bold text-white">Sala de Espera</h2>
-              </div>
-
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-black text-white">{gameState.players.length}</span>
-                <span className="text-lg text-gray-500 font-bold">/ 4</span>
-              </div>
-
-              {gameState.players.length >= 2 && myPlayer?.id === gameState.players[0].id ? (
-                <button
-                  onClick={startGame}
-                  className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-black font-black text-lg rounded-2xl shadow-[0_4px_0_rgb(161,98,7)] transition-all uppercase tracking-tight"
-                >
-                  INICIAR JOGO
-                </button>
-              ) : (
-                <div className="w-full py-3 px-6 bg-black/20 rounded-2xl border border-white/5 text-center">
-                  <p className="text-xs text-yellow-500/80 font-bold animate-pulse">
-                    {gameState.players.length < 2
-                      ? "Aguardando competidores..."
-                      : "Aguardando o anfitrião..."}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Game Over Modal */}
       {gameState?.status === 'finished' && (
@@ -436,7 +386,8 @@ export default function GameTable() {
 
       {/* Game Area */}
       <div className="flex-1 relative flex items-center justify-center">
-        {/* Opponents */}
+
+        {/* Opponents (Simplified layout for now) */}
         {gameState?.players.filter(p => p.id !== socket.id).map((player, idx) => (
           <div key={player.id} className="absolute top-10 transform -translate-x-1/2" style={{ left: `${(idx + 1) * 30}%` }}>
             <div className="flex flex-col items-center">
@@ -455,18 +406,19 @@ export default function GameTable() {
 
         {/* Center Table (Deck & Discard) */}
         {gameState?.status === 'playing' && (
-          <div className="flex gap-4 md:gap-8 items-center scale-90 md:scale-100">
+          <div className="flex gap-4 md:gap-8 items-center">
             {/* Deck */}
             <div
               onClick={handleDrawCard}
               className={`relative group cursor-pointer transition-transform ${canDraw ? 'hover:scale-105 ring-4 ring-yellow-400 rounded-lg' : 'opacity-80'}`}
             >
               <CardView isBack={true} />
+
               <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border border-white z-20">
                 {gameState.deckCount}
               </div>
               {canDraw && (
-                <div className="absolute -bottom-8 left-0 right-0 text-center text-yellow-300 font-bold text-xs animate-bounce">
+                <div className="absolute -bottom-8 left-0 right-0 text-center text-yellow-300 font-bold text-xs md:text-sm animate-bounce">
                   COMPRAR
                 </div>
               )}
@@ -474,8 +426,8 @@ export default function GameTable() {
 
             {/* Vira Card */}
             {gameState.vira && (
-              <div className="relative transform rotate-12 mx-1 md:mx-2">
-                <div className="absolute -top-6 left-0 right-0 text-center text-yellow-400 font-bold text-[10px] md:text-xs uppercase tracking-wider">Vira</div>
+              <div className="relative transform rotate-12 mx-2">
+                <div className="absolute -top-6 left-0 right-0 text-center text-yellow-400 font-bold text-xs uppercase tracking-wider">Vira</div>
                 <CardView card={gameState.vira} />
               </div>
             )}
@@ -483,7 +435,7 @@ export default function GameTable() {
             {/* Discard Pile */}
             <div
               onClick={handleDrawFromDiscard}
-              className={`w-14 h-20 md:w-24 md:h-36 border-2 border-dashed border-white/30 rounded-lg flex items-center justify-center transition-all
+              className={`w-16 h-24 md:w-24 md:h-36 border-2 border-dashed border-white/30 rounded-lg flex items-center justify-center transition-all
                 ${canDraw && gameState.discardPile.length > 0 ? 'cursor-pointer hover:border-yellow-400 hover:bg-white/5 ring-2 ring-transparent hover:ring-yellow-400' : ''}
               `}
             >
@@ -491,13 +443,13 @@ export default function GameTable() {
                 <div className="relative">
                   <CardView card={gameState.discardPile[gameState.discardPile.length - 1]} />
                   {canDraw && (
-                    <div className="absolute -bottom-8 left-0 right-0 text-center text-yellow-300 font-bold text-xs animate-bounce whitespace-nowrap">
+                    <div className="absolute -bottom-8 left-0 right-0 text-center text-yellow-300 font-bold text-xs md:text-sm animate-bounce whitespace-nowrap">
                       PEGAR
                     </div>
                   )}
                 </div>
               ) : (
-                <span className="text-white/20 text-[10px] md:text-sm">Descarte</span>
+                <span className="text-white/20 text-xs md:text-sm">Descarte</span>
               )}
             </div>
           </div>
@@ -506,12 +458,12 @@ export default function GameTable() {
 
       {/* My Hand */}
       {myPlayer && (
-        <div className="h-48 md:h-72 bg-gradient-to-t from-black/90 to-transparent flex items-end justify-center pb-2 md:pb-8 px-2 md:px-4 relative z-20 w-full">
+        <div className="h-56 md:h-72 bg-gradient-to-t from-black/90 to-transparent flex items-end justify-center pb-4 md:pb-8 px-2 md:px-4 relative z-20 w-full overflow-hidden">
           <Reorder.Group
             axis="x"
             values={localHand}
             onReorder={setLocalHand}
-            className="flex -space-x-11 md:-space-x-12 hover:-space-x-6 md:hover:-space-x-8 transition-all duration-300 p-2 pt-10 md:p-6 md:pt-16 overflow-x-auto w-full justify-center min-w-min no-scrollbar scroll-smooth"
+            className="flex -space-x-8 md:-space-x-12 hover:-space-x-6 md:hover:-space-x-8 transition-all duration-300 p-4 pt-12 md:p-6 md:pt-16 overflow-x-auto w-full justify-center md:justify-center min-w-min no-scrollbar"
             style={{ maxWidth: '100vw' }}
           >
             {localHand.map((card) => (
@@ -535,16 +487,15 @@ export default function GameTable() {
           </Reorder.Group>
 
           {isMyTurn && (
-            <div className="absolute top-[-40px] md:top-[-60px] left-1/2 transform -translate-x-1/2 bg-black/80 p-2 md:p-4 rounded-2xl backdrop-blur-xl text-center flex flex-row items-center gap-4 z-50 border border-white/10 shadow-2xl whitespace-nowrap">
-              <div className="flex flex-col items-start px-2">
-                <div className="text-yellow-400 font-black text-[10px] md:text-base tracking-widest uppercase">SUA VEZ</div>
-                <div className="text-[10px] md:text-xs text-gray-300 font-medium">
-                  {gameState?.turnPhase === 'draw' ? 'Compre uma carta' : 'Descarte uma carta'}
-                </div>
+            <div className="absolute bottom-28 md:bottom-24 right-4 md:right-10 bg-black/60 p-3 md:p-4 rounded-lg backdrop-blur text-center flex flex-col gap-2 z-30">
+              <div className="text-yellow-400 font-bold text-lg md:text-xl mb-1">SUA VEZ</div>
+              <div className="text-xs md:text-sm text-white">
+                {gameState?.turnPhase === 'draw' ? 'Compre uma carta' : 'Descarte uma carta'}
               </div>
+
               <button
                 onClick={handleDeclareVictory}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs md:text-sm rounded-xl shadow-lg transition-all animate-pulse border border-white/10"
+                className="mt-1 md:mt-2 px-3 md:px-4 py-1 md:py-2 bg-green-600 hover:bg-green-500 text-white font-bold text-sm md:text-base rounded shadow-lg animate-pulse"
               >
                 BATER!
               </button>
@@ -552,30 +503,12 @@ export default function GameTable() {
           )}
         </div>
       )}
-
-      {/* Toast Notification Container */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ y: 50, opacity: 0, x: '-50%' }}
-            animate={{ y: 0, opacity: 1, x: '-50%' }}
-            exit={{ y: 50, opacity: 0, x: '-50%' }}
-            className={`fixed bottom-10 left-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 backdrop-blur-xl min-w-[300px] justify-center
-              ${toast.type === 'error' ? 'bg-red-900/90 text-white' : 'bg-black/80 text-yellow-500'}
-            `}
-          >
-            {toast.type === 'error' && (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-            )}
-            <span className="font-bold text-sm tracking-tight">{toast.message}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
 
 function CardView({ card, isBack = false, onClick }: { card?: Card; isBack?: boolean; onClick?: () => void }) {
+  // Classic card back pattern using CSS
   const cardBackStyle = {
     backgroundImage: `
       repeating-linear-gradient(45deg, #8b0000 0, #8b0000 10px, #a52a2a 10px, #a52a2a 20px),
@@ -588,7 +521,7 @@ function CardView({ card, isBack = false, onClick }: { card?: Card; isBack?: boo
     return (
       <div
         onClick={onClick}
-        className="w-14 h-20 md:w-24 md:h-36 rounded-lg shadow-xl border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-red-900"
+        className="w-16 h-24 md:w-24 md:h-36 rounded-lg shadow-xl border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-red-900"
       >
         <div className="absolute inset-2 border border-white/30 rounded opacity-50" />
         <div className="absolute inset-0 opacity-30" style={cardBackStyle} />
@@ -611,20 +544,20 @@ function CardView({ card, isBack = false, onClick }: { card?: Card; isBack?: boo
     <div
       onClick={onClick}
       className={`
-      w-14 h-20 md:w-24 md:h-36 bg-white rounded-lg shadow-xl border border-gray-200 
+      w-16 h-24 md:w-24 md:h-36 bg-white rounded-lg shadow-xl border border-gray-200 
       flex flex-col justify-between p-1 md:p-2 select-none cursor-pointer relative
       ${isRed ? 'text-red-600' : 'text-black'}
     `}>
-      <div className="text-[10px] md:text-lg font-bold leading-none text-left">
+      <div className="text-sm md:text-lg font-bold leading-none text-left">
         {card.rank}
-        <div className="text-[8px] md:text-sm">{suitIcon}</div>
+        <div className="text-[10px] md:text-sm">{suitIcon}</div>
       </div>
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-xl md:text-4xl opacity-20 md:opacity-100">{suitIcon}</div>
+        <div className="text-2xl md:text-4xl opacity-20 md:opacity-100">{suitIcon}</div>
       </div>
-      <div className="text-[10px] md:text-lg font-bold leading-none text-right transform rotate-180">
+      <div className="text-sm md:text-lg font-bold leading-none text-right transform rotate-180">
         {card.rank}
-        <div className="text-[8px] md:text-sm">{suitIcon}</div>
+        <div className="text-[10px] md:text-sm">{suitIcon}</div>
       </div>
     </div>
   );
