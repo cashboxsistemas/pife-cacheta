@@ -212,10 +212,10 @@ export default function GameTable() {
 
         {/* PLAYER: TOP */}
         {playersByPos.top && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center z-10">
-            <div className="flex -space-x-5 mb-3 scale-90">
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center z-10">
+            <div className="flex -space-x-6 mb-2 scale-[0.8] origin-top">
               {playersByPos.top.hand.map((_, i) => (
-                <div key={i} className="w-10 h-14 bg-[#1e3a5f] border-2 border-white/10 rounded-lg shadow-xl" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #1e3a5f 0, #1e3a5f 5px, #2d5a88 5px, #2d5a88 10px)' }} />
+                <div key={i} className="w-10 h-14 bg-[#1e3a5f] border-2 border-white/10 rounded-lg shadow-xl shadow-black/40" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #1e3a5f 0, #1e3a5f 5px, #2d5a88 5px, #2d5a88 10px)' }} />
               ))}
             </div>
             <PlayerAvatar player={playersByPos.top} />
@@ -224,10 +224,10 @@ export default function GameTable() {
 
         {/* PLAYER: LEFT */}
         {playersByPos.left && (
-          <div className="absolute left-4 top-[40%] -translate-y-1/2 flex items-center gap-4 z-10">
-            <div className="flex flex-col -space-y-10 scale-90">
+          <div className="absolute -left-6 top-[40%] -translate-y-1/2 flex items-center gap-2 z-10">
+            <div className="flex flex-col -space-y-12 scale-[0.8] origin-left">
               {playersByPos.left.hand.map((_, i) => (
-                <div key={i} className="w-14 h-10 bg-[#1e3a5f] border-2 border-white/10 rounded-lg shadow-xl" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #1e3a5f 0, #1e3a5f 5px, #2d5a88 5px, #2d5a88 10px)' }} />
+                <div key={i} className="w-10 h-14 bg-[#1e3a5f] border-2 border-white/10 rounded-lg shadow-xl shadow-black/40" style={{ backgroundImage: 'repeating-linear-gradient(135deg, #1e3a5f 0, #1e3a5f 5px, #2d5a88 5px, #2d5a88 10px)' }} />
               ))}
             </div>
             <PlayerAvatar player={playersByPos.left} />
@@ -236,10 +236,10 @@ export default function GameTable() {
 
         {/* PLAYER: RIGHT */}
         {playersByPos.right && (
-          <div className="absolute right-4 top-[40%] -translate-y-1/2 flex flex-row-reverse items-center gap-4 z-10">
-            <div className="flex flex-col -space-y-10 scale-90">
+          <div className="absolute -right-6 top-[40%] -translate-y-1/2 flex flex-row-reverse items-center gap-2 z-10">
+            <div className="flex flex-col -space-y-12 scale-[0.8] origin-right">
               {playersByPos.right.hand.map((_, i) => (
-                <div key={i} className="w-14 h-10 bg-[#1e3a5f] border-2 border-white/10 rounded-lg shadow-xl" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #1e3a5f 0, #1e3a5f 5px, #2d5a88 5px, #2d5a88 10px)' }} />
+                <div key={i} className="w-10 h-14 bg-[#1e3a5f] border-2 border-white/10 rounded-lg shadow-xl shadow-black/40" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #1e3a5f 0, #1e3a5f 5px, #2d5a88 5px, #2d5a88 10px)' }} />
               ))}
             </div>
             <PlayerAvatar player={playersByPos.right} />
@@ -326,9 +326,9 @@ export default function GameTable() {
 
 function PlayerAvatar({ player, large = false }: { player: Player, large?: boolean }) {
   return (
-    <div className={`flex flex-col items-center gap-2 ${player.isTurn ? 'scale-110' : ''} transition-all duration-500`}>
+    <div className={`flex flex-col items-center gap-1 ${player.isTurn ? 'scale-110' : ''} transition-all duration-500`}>
       <div className="relative">
-        <div className={`${large ? 'w-20 h-20' : 'w-16 h-16'} rounded-full bg-gradient-to-br from-yellow-100 to-orange-200 border-4 ${player.isTurn ? 'border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.6)]' : 'border-white/20'} overflow-hidden flex items-center justify-center p-1`}>
+        <div className={`${large ? 'w-20 h-20' : 'w-12 h-12'} rounded-full bg-gradient-to-br from-yellow-100 to-orange-200 border-4 ${player.isTurn ? 'border-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.6)]' : 'border-white/20'} overflow-hidden flex items-center justify-center p-1`}>
           <div className="w-full h-full rounded-full bg-emerald-950/40 flex items-center justify-center text-4xl opacity-50 grayscale">
             👤
           </div>
