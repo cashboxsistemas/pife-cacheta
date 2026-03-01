@@ -309,7 +309,7 @@ export default function GameTable() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-green-800 text-white overflow-hidden relative">
+    <div className="flex flex-col h-screen h-[100dvh] bg-green-800 text-white overflow-hidden relative">
       {isPortrait && gameState?.status === 'playing' && (
         <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-6 text-center lg:hidden">
           <div className="animate-bounce mb-4">
@@ -339,7 +339,7 @@ export default function GameTable() {
           <div className="bg-green-900/95 p-4 rounded-[2rem] border-2 border-white/10 flex flex-col items-center gap-3 shadow-2xl max-w-sm w-full mx-4 overflow-y-auto max-h-[90dvh]">
             <div className="w-full flex flex-col items-center gap-1 text-center">
               <span className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold">Código da Sala</span>
-              <div className="text-4xl font-mono font-black text-yellow-500 tracking-tighter bg-black/40 px-5 py-3 rounded-2xl border border-white/10 shadow-inner">
+              <div className="text-4xl font-mono font-black text-yellow-500 tracking-tighter bg-black/40 px-4 py-3 rounded-2xl border border-white/10 shadow-inner">
                 {roomId}
               </div>
               <button
