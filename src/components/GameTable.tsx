@@ -244,16 +244,7 @@ export default function GameTable() {
 
   if (!roomId) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-green-800 text-white p-4">
-        {isPortrait && (
-          <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-6 text-center lg:hidden">
-            <div className="animate-bounce mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="yellow" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-90"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></svg>
-            </div>
-            <h2 className="text-2xl font-bold text-yellow-500 mb-2">Gire seu dispositivo</h2>
-            <p className="text-gray-400">Este jogo foi feito para ser jogado em modo paisagem (deitado).</p>
-          </div>
-        )}
+      <div className="flex flex-col items-center justify-center min-h-screen bg-green-800 text-white p-4 text-center">
 
         <h1 className="text-5xl font-black mb-8 italic tracking-tighter text-yellow-500 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] uppercase">
           Nick’s Deck
