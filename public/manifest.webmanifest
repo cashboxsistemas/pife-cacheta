@@ -1,6 +1,6 @@
 {
-    "name": "Nick's Deck",
-    "short_name": "Nick's Deck",
+    "name": "Nick's Game",
+    "short_name": "Nick's Game",
     "description": "Jogue Pife e Cacheta online com seus amigos!",
     "start_url": ".",
     "display": "standalone",

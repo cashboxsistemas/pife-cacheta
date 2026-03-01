@@ -231,7 +231,7 @@ export default function GameTable() {
 
         {/* PLAYER: TOP */}
         {playersByPos.top && (
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center z-10">
+          <div className="absolute -top-20 left-1/2 -translate-x-1/2 flex flex-col items-center z-10">
             <div className="flex -space-x-6 mb-2 scale-[0.8] origin-top">
               {playersByPos.top.hand.map((_, i) => (
                 <div key={i} className="w-10 h-14 bg-[#1e3a5f] border-2 border-white/10 rounded-lg shadow-xl shadow-black/40" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #1e3a5f 0, #1e3a5f 5px, #2d5a88 5px, #2d5a88 10px)' }} />
