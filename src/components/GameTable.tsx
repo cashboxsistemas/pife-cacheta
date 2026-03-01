@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { socket, connectSocket, disconnectSocket } from '../services/socket';
 import { GameState, Card, Player } from '../types/game';
-import { motion, Reorder } from 'motion/react';
+import { motion, AnimatePresence, Reorder } from 'motion/react';
 
 export default function GameTable() {
   const [isConnected, setIsConnected] = useState(false);
@@ -14,6 +14,12 @@ export default function GameTable() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
   const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   useEffect(() => {
     connectSocket();
@@ -39,7 +45,7 @@ export default function GameTable() {
     }
 
     function onError(msg: string) {
-      alert(msg);
+      showToast(msg, 'error');
     }
 
     function onGameOver({ winnerName }: { winnerName: string }) {
@@ -99,7 +105,7 @@ export default function GameTable() {
 
   const createRoom = (type: 'pife' | 'cacheta') => {
     if (!playerName) {
-      alert('Por favor, digite seu nome!');
+      showToast('Por favor, digite seu nome!', 'error');
       return;
     }
     socket.emit('create_room', { type, playerName });
@@ -107,7 +113,7 @@ export default function GameTable() {
 
   const joinRoom = () => {
     if (!playerName) {
-      alert('Por favor, digite seu nome!');
+      showToast('Por favor, digite seu nome!', 'error');
       return;
     }
     if (joinInput) {
@@ -231,7 +237,7 @@ export default function GameTable() {
 
   if (!roomId) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-green-800 text-white p-4 text-center">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-green-800 text-white p-4 text-center overflow-hidden">
         <h1 className="text-5xl font-black mb-8 italic tracking-tighter text-yellow-500 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] uppercase">
           Nick’s Deck
         </h1>
@@ -304,6 +310,24 @@ export default function GameTable() {
             INSTALAR APP
           </button>
         )}
+
+        <AnimatePresence>
+          {toast && (
+            <motion.div
+              initial={{ y: 50, opacity: 0, x: '-50%' }}
+              animate={{ y: 0, opacity: 1, x: '-50%' }}
+              exit={{ y: 50, opacity: 0, x: '-50%' }}
+              className={`fixed bottom-10 left-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 backdrop-blur-xl min-w-[300px] justify-center
+                ${toast.type === 'error' ? 'bg-red-900/90 text-white' : 'bg-black/80 text-yellow-500'}
+              `}
+            >
+              {toast.type === 'error' && (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+              )}
+              <span className="font-bold text-sm tracking-tight">{toast.message}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
@@ -345,7 +369,7 @@ export default function GameTable() {
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(roomId || '');
-                  alert('Código copiado!');
+                  showToast('Código copiado!', 'success');
                 }}
                 className="mt-2 flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold transition-all active:scale-95 border border-white/5 uppercase"
               >
@@ -431,7 +455,7 @@ export default function GameTable() {
 
         {/* Center Table (Deck & Discard) */}
         {gameState?.status === 'playing' && (
-          <div className="flex gap-4 md:gap-8 items-center">
+          <div className="flex gap-4 md:gap-8 items-center scale-90 md:scale-100">
             {/* Deck */}
             <div
               onClick={handleDrawCard}
@@ -442,7 +466,7 @@ export default function GameTable() {
                 {gameState.deckCount}
               </div>
               {canDraw && (
-                <div className="absolute -bottom-8 left-0 right-0 text-center text-yellow-300 font-bold text-xs md:text-sm animate-bounce">
+                <div className="absolute -bottom-8 left-0 right-0 text-center text-yellow-300 font-bold text-xs animate-bounce">
                   COMPRAR
                 </div>
               )}
@@ -450,8 +474,8 @@ export default function GameTable() {
 
             {/* Vira Card */}
             {gameState.vira && (
-              <div className="relative transform rotate-12 mx-2">
-                <div className="absolute -top-6 left-0 right-0 text-center text-yellow-400 font-bold text-xs uppercase tracking-wider">Vira</div>
+              <div className="relative transform rotate-12 mx-1 md:mx-2">
+                <div className="absolute -top-6 left-0 right-0 text-center text-yellow-400 font-bold text-[10px] md:text-xs uppercase tracking-wider">Vira</div>
                 <CardView card={gameState.vira} />
               </div>
             )}
@@ -459,7 +483,7 @@ export default function GameTable() {
             {/* Discard Pile */}
             <div
               onClick={handleDrawFromDiscard}
-              className={`w-16 h-24 md:w-24 md:h-36 border-2 border-dashed border-white/30 rounded-lg flex items-center justify-center transition-all
+              className={`w-14 h-20 md:w-24 md:h-36 border-2 border-dashed border-white/30 rounded-lg flex items-center justify-center transition-all
                 ${canDraw && gameState.discardPile.length > 0 ? 'cursor-pointer hover:border-yellow-400 hover:bg-white/5 ring-2 ring-transparent hover:ring-yellow-400' : ''}
               `}
             >
@@ -467,13 +491,13 @@ export default function GameTable() {
                 <div className="relative">
                   <CardView card={gameState.discardPile[gameState.discardPile.length - 1]} />
                   {canDraw && (
-                    <div className="absolute -bottom-8 left-0 right-0 text-center text-yellow-300 font-bold text-xs md:text-sm animate-bounce whitespace-nowrap">
+                    <div className="absolute -bottom-8 left-0 right-0 text-center text-yellow-300 font-bold text-xs animate-bounce whitespace-nowrap">
                       PEGAR
                     </div>
                   )}
                 </div>
               ) : (
-                <span className="text-white/20 text-xs md:text-sm">Descarte</span>
+                <span className="text-white/20 text-[10px] md:text-sm">Descarte</span>
               )}
             </div>
           </div>
@@ -482,12 +506,12 @@ export default function GameTable() {
 
       {/* My Hand */}
       {myPlayer && (
-        <div className="h-56 md:h-72 bg-gradient-to-t from-black/90 to-transparent flex items-end justify-center pb-4 md:pb-8 px-2 md:px-4 relative z-20 w-full overflow-hidden">
+        <div className="h-48 md:h-72 bg-gradient-to-t from-black/90 to-transparent flex items-end justify-center pb-2 md:pb-8 px-2 md:px-4 relative z-20 w-full">
           <Reorder.Group
             axis="x"
             values={localHand}
             onReorder={setLocalHand}
-            className="flex -space-x-8 md:-space-x-12 hover:-space-x-6 md:hover:-space-x-8 transition-all duration-300 p-4 pt-12 md:p-6 md:pt-16 overflow-x-auto w-full justify-center md:justify-center min-w-min no-scrollbar"
+            className="flex -space-x-11 md:-space-x-12 hover:-space-x-6 md:hover:-space-x-8 transition-all duration-300 p-2 pt-10 md:p-6 md:pt-16 overflow-x-auto w-full justify-center min-w-min no-scrollbar scroll-smooth"
             style={{ maxWidth: '100vw' }}
           >
             {localHand.map((card) => (
@@ -511,14 +535,16 @@ export default function GameTable() {
           </Reorder.Group>
 
           {isMyTurn && (
-            <div className="absolute bottom-28 md:bottom-24 right-4 md:right-10 bg-black/60 p-3 md:p-4 rounded-lg backdrop-blur text-center flex flex-col gap-2 z-30">
-              <div className="text-yellow-400 font-bold text-lg md:text-xl mb-1">SUA VEZ</div>
-              <div className="text-xs md:text-sm text-white">
-                {gameState?.turnPhase === 'draw' ? 'Compre uma carta' : 'Descarte uma carta'}
+            <div className="absolute top-[-40px] md:top-[-60px] left-1/2 transform -translate-x-1/2 bg-black/80 p-2 md:p-4 rounded-2xl backdrop-blur-xl text-center flex flex-row items-center gap-4 z-50 border border-white/10 shadow-2xl whitespace-nowrap">
+              <div className="flex flex-col items-start px-2">
+                <div className="text-yellow-400 font-black text-[10px] md:text-base tracking-widest uppercase">SUA VEZ</div>
+                <div className="text-[10px] md:text-xs text-gray-300 font-medium">
+                  {gameState?.turnPhase === 'draw' ? 'Compre uma carta' : 'Descarte uma carta'}
+                </div>
               </div>
               <button
                 onClick={handleDeclareVictory}
-                className="mt-1 md:mt-2 px-3 md:px-4 py-1 md:py-2 bg-green-600 hover:bg-green-500 text-white font-bold text-sm md:text-base rounded shadow-lg animate-pulse"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-black text-xs md:text-sm rounded-xl shadow-lg transition-all animate-pulse border border-white/10"
               >
                 BATER!
               </button>
@@ -526,6 +552,25 @@ export default function GameTable() {
           )}
         </div>
       )}
+
+      {/* Toast Notification Container */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ y: 50, opacity: 0, x: '-50%' }}
+            animate={{ y: 0, opacity: 1, x: '-50%' }}
+            exit={{ y: 50, opacity: 0, x: '-50%' }}
+            className={`fixed bottom-10 left-1/2 z-[200] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20 backdrop-blur-xl min-w-[300px] justify-center
+              ${toast.type === 'error' ? 'bg-red-900/90 text-white' : 'bg-black/80 text-yellow-500'}
+            `}
+          >
+            {toast.type === 'error' && (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+            )}
+            <span className="font-bold text-sm tracking-tight">{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -543,7 +588,7 @@ function CardView({ card, isBack = false, onClick }: { card?: Card; isBack?: boo
     return (
       <div
         onClick={onClick}
-        className="w-16 h-24 md:w-24 md:h-36 rounded-lg shadow-xl border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-red-900"
+        className="w-14 h-20 md:w-24 md:h-36 rounded-lg shadow-xl border-2 border-white/20 flex items-center justify-center relative overflow-hidden bg-red-900"
       >
         <div className="absolute inset-2 border border-white/30 rounded opacity-50" />
         <div className="absolute inset-0 opacity-30" style={cardBackStyle} />
@@ -566,20 +611,20 @@ function CardView({ card, isBack = false, onClick }: { card?: Card; isBack?: boo
     <div
       onClick={onClick}
       className={`
-      w-16 h-24 md:w-24 md:h-36 bg-white rounded-lg shadow-xl border border-gray-200 
+      w-14 h-20 md:w-24 md:h-36 bg-white rounded-lg shadow-xl border border-gray-200 
       flex flex-col justify-between p-1 md:p-2 select-none cursor-pointer relative
       ${isRed ? 'text-red-600' : 'text-black'}
     `}>
-      <div className="text-sm md:text-lg font-bold leading-none text-left">
+      <div className="text-[10px] md:text-lg font-bold leading-none text-left">
         {card.rank}
-        <div className="text-[10px] md:text-sm">{suitIcon}</div>
+        <div className="text-[8px] md:text-sm">{suitIcon}</div>
       </div>
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-2xl md:text-4xl opacity-20 md:opacity-100">{suitIcon}</div>
+        <div className="text-xl md:text-4xl opacity-20 md:opacity-100">{suitIcon}</div>
       </div>
-      <div className="text-sm md:text-lg font-bold leading-none text-right transform rotate-180">
+      <div className="text-[10px] md:text-lg font-bold leading-none text-right transform rotate-180">
         {card.rank}
-        <div className="text-[10px] md:text-sm">{suitIcon}</div>
+        <div className="text-[8px] md:text-sm">{suitIcon}</div>
       </div>
     </div>
   );
