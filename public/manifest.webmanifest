@@ -1,12 +1,12 @@
 {
-    "name": "DECK MASTER",
-    "short_name": "DECK MASTER",
+    "name": "Nick's Deck",
+    "short_name": "Nick's Deck",
     "description": "Jogue Pife e Cacheta online com seus amigos!",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#064e3b",
     "theme_color": "#064e3b",
-    "orientation": "any",
+    "orientation": "landscape",
     "icons": [
         {
             "src": "icon-512.png",

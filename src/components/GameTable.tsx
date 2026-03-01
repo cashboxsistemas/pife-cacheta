@@ -13,6 +13,7 @@ export default function GameTable() {
   const [winnerName, setWinnerName] = useState<string | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
 
   useEffect(() => {
     connectSocket();
@@ -58,7 +59,12 @@ export default function GameTable() {
       setShowInstallBtn(true);
     };
 
+    const handleResize = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('resize', handleResize);
 
     return () => {
       socket.off('connect', onConnect);
@@ -68,6 +74,7 @@ export default function GameTable() {
       socket.off('error', onError);
       socket.off('game_over', onGameOver);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('resize', handleResize);
       disconnectSocket();
     };
   }, []);
@@ -238,7 +245,19 @@ export default function GameTable() {
   if (!roomId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-green-800 text-white p-4">
-        <h1 className="text-4xl font-bold mb-8 italic tracking-widest text-yellow-500 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">DECK MASTER</h1>
+        {isPortrait && (
+          <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-6 text-center lg:hidden">
+            <div className="animate-bounce mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="yellow" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-90"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></svg>
+            </div>
+            <h2 className="text-2xl font-bold text-yellow-500 mb-2">Gire seu dispositivo</h2>
+            <p className="text-gray-400">Este jogo foi feito para ser jogado em modo paisagem (deitado).</p>
+          </div>
+        )}
+
+        <h1 className="text-5xl font-black mb-8 italic tracking-tighter text-yellow-500 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] uppercase">
+          Nick’s Deck
+        </h1>
 
         <div className="bg-green-900/50 p-6 rounded-xl backdrop-blur-sm border border-white/10 w-full max-w-md space-y-6">
           <div className="flex items-center justify-between">
@@ -314,6 +333,15 @@ export default function GameTable() {
 
   return (
     <div className="flex flex-col h-screen bg-green-800 text-white overflow-hidden relative">
+      {isPortrait && (
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-6 text-center lg:hidden">
+          <div className="animate-bounce mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="yellow" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-90"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></svg>
+          </div>
+          <h2 className="text-2xl font-bold text-yellow-500 mb-2">Gire seu dispositivo</h2>
+          <p className="text-gray-400">Para uma melhor experiência, use o modo paisagem.</p>
+        </div>
+      )}
       {/* Header / Info Bar */}
       <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-10 pointer-events-none">
         <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg pointer-events-auto">
