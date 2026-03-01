@@ -13,6 +13,12 @@ export default function GameTable() {
   const [winnerName, setWinnerName] = useState<string | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' | 'info' } | null>(null);
+
+  const showToast = (message: string, type: 'error' | 'success' | 'info' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     connectSocket();
@@ -24,7 +30,7 @@ export default function GameTable() {
       setRoomId(state.roomId);
       if (state.status !== 'finished') setWinnerName(null);
     }
-    function onError(msg: string) { alert(msg); }
+    function onError(msg: string) { showToast(msg, 'error'); }
     function onGameOver({ winnerName }: { winnerName: string }) { setWinnerName(winnerName); }
 
     socket.on('connect', onConnect);
@@ -70,12 +76,12 @@ export default function GameTable() {
   }, [gameState]);
 
   const createRoom = (type: 'pife' | 'cacheta') => {
-    if (!playerName) { alert('Digite seu nome!'); return; }
+    if (!playerName) { showToast('Digite seu nome!', 'error'); return; }
     socket.emit('create_room', { type, playerName });
   };
 
   const joinRoom = () => {
-    if (!playerName) { alert('Digite seu nome!'); return; }
+    if (!playerName) { showToast('Digite seu nome!', 'error'); return; }
     if (joinInput) socket.emit('join_room', { roomId: joinInput.toUpperCase(), playerName });
   };
 
@@ -213,7 +219,7 @@ export default function GameTable() {
       {/* Joker / Vira Slot (Fixed Top Left) */}
       {gameState?.vira && (
         <div className="absolute top-28 left-5 z-10 flex flex-col items-center">
-          <div className="bg-black/40 px-3 py-1 rounded-t-xl text-[9px] font-black text-yellow-500 uppercase tracking-[0.2em] border-x border-t border-white/10 backdrop-blur-sm">Curinga</div>
+          <div className="bg-black/40 px-3 py-1 rounded-t-xl text-[9px] font-black text-yellow-500 uppercase tracking-[0.2em] border-x border-t border-white/10 backdrop-blur-sm">Vira</div>
           <div className="scale-[0.85] origin-top drop-shadow-2xl">
             <CardView card={gameState.vira} />
           </div>
@@ -332,6 +338,24 @@ export default function GameTable() {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -100, opacity: 0 }}
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] w-[90%] max-w-sm"
+          >
+            <div className={`
+              px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border-2 flex items-center justify-center text-center font-black uppercase tracking-tight
+              ${toast.type === 'error' ? 'bg-red-950/80 border-red-500 text-red-100' : 'bg-emerald-950/80 border-emerald-500 text-emerald-100'}
+            `}>
+              {toast.message}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
