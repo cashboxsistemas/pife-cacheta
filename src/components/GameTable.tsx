@@ -88,18 +88,11 @@ export default function GameTable() {
     const serverHand = myPlayer.hand;
 
     setLocalHand(prev => {
-      // If first load or empty, just use server hand
       if (prev.length === 0) return serverHand;
-
-      // Keep existing cards in their current order
       const existingIds = new Set(prev.map(c => c.id));
       const newCards = serverHand.filter(c => !existingIds.has(c.id));
-
-      // Filter out cards that were removed (discarded)
       const serverIds = new Set(serverHand.map(c => c.id));
       const currentCards = prev.filter(c => serverIds.has(c.id));
-
-      // Append new cards at the end
       return [...currentCards, ...newCards];
     });
   }, [gameState]);
@@ -128,21 +121,17 @@ export default function GameTable() {
     }
   };
 
-  // Helper to get current player
   const myPlayer = gameState?.players.find(p => p.id === socket.id);
   const isMyTurn = myPlayer?.isTurn;
   const canDraw = isMyTurn && gameState?.turnPhase === 'draw';
   const canDiscard = isMyTurn && gameState?.turnPhase === 'discard';
 
-  // Sound Effects
   const playSound = (type: 'draw' | 'discard' | 'shuffle' | 'victory') => {
     const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
-
     oscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-
     const now = audioCtx.currentTime;
 
     switch (type) {
@@ -165,7 +154,6 @@ export default function GameTable() {
         oscillator.stop(now + 0.15);
         break;
       case 'shuffle':
-        // Simulating a shuffle sound with noise buffer would be complex, just a simple trill
         oscillator.type = 'square';
         oscillator.frequency.setValueAtTime(200, now);
         oscillator.frequency.linearRampToValueAtTime(800, now + 0.3);
@@ -175,7 +163,6 @@ export default function GameTable() {
         oscillator.stop(now + 0.3);
         break;
       case 'victory':
-        // Major chord arpeggio
         [440, 554, 659, 880].forEach((freq, i) => {
           const osc = audioCtx.createOscillator();
           const gn = audioCtx.createGain();
@@ -188,7 +175,7 @@ export default function GameTable() {
           osc.start(now + i * 0.1);
           osc.stop(now + i * 0.1 + 0.5);
         });
-        return; // Custom handling
+        break;
     }
   };
 
@@ -245,7 +232,6 @@ export default function GameTable() {
   if (!roomId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-green-800 text-white p-4 text-center">
-
         <h1 className="text-5xl font-black mb-8 italic tracking-tighter text-yellow-500 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] uppercase">
           Nick’s Deck
         </h1>
@@ -333,6 +319,7 @@ export default function GameTable() {
           <p className="text-gray-400">Para uma melhor experiência, use o modo paisagem.</p>
         </div>
       )}
+
       {/* Header / Info Bar */}
       <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-10 pointer-events-none">
         <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg pointer-events-auto">
@@ -344,44 +331,60 @@ export default function GameTable() {
             </div>
           )}
         </div>
-
       </div>
 
       {/* Waiting Room Modal */}
       {gameState?.status === 'waiting' && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-green-900/90 p-8 rounded-2xl border-2 border-white/10 flex flex-col items-center gap-6 shadow-2xl max-w-sm w-full mx-4">
-            <div className="flex flex-col items-center">
-              <h2 className="text-2xl font-bold text-white mb-2">Sala de Espera</h2>
-              <div className="bg-black/40 px-4 py-1 rounded-full text-yellow-400 font-mono text-sm border border-yellow-500/30">
-                {gameState.gameType.toUpperCase()}
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-md">
+          <div className="bg-green-900/95 p-8 rounded-[2.5rem] border-2 border-white/10 flex flex-col items-center gap-8 shadow-2xl max-w-sm w-full mx-4">
+            <div className="w-full flex flex-col items-center gap-3 text-center">
+              <span className="text-[11px] text-gray-400 uppercase tracking-[0.2em] font-bold">Código da Sala</span>
+              <div className="text-6xl font-mono font-black text-yellow-500 tracking-tighter bg-black/40 px-6 py-4 rounded-3xl border border-white/10 shadow-inner">
+                {roomId}
               </div>
-            </div>
-
-            <div className="flex flex-col items-center">
-              <div className="text-5xl font-black text-white mb-1">{gameState.players.length} <span className="text-xl text-gray-400">/ 4</span></div>
-              <div className="text-sm text-gray-400">Jogadores conectados</div>
-            </div>
-
-            {gameState.players.length >= 2 && myPlayer?.id === gameState.players[0].id ? (
               <button
-                onClick={startGame}
-                className="w-full py-4 bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-black font-black text-xl rounded-xl shadow-[0_4px_0_rgb(161,98,7)] transition-all uppercase tracking-tight"
+                onClick={() => {
+                  navigator.clipboard.writeText(roomId || '');
+                  alert('Código copiado!');
+                }}
+                className="mt-2 flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold transition-all active:scale-95 border border-white/5 uppercase"
               >
-                INICIAR JOGO
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+                Copiar Código
               </button>
-            ) : (
-              <div className="text-center py-4 px-6 bg-white/5 rounded-xl border border-white/5">
-                <p className="text-sm text-yellow-500 font-medium">
-                  {gameState.players.length < 2
-                    ? "Aguardando mais jogadores..."
-                    : "Aguardando o líder iniciar..."}
-                </p>
-              </div>
-            )}
+            </div>
 
-            <div className="text-[10px] text-gray-500 uppercase tracking-widest">
-              ID: {roomId}
+            <div className="w-full h-px bg-white/10" />
+
+            <div className="flex flex-col items-center gap-4 w-full">
+              <div className="flex flex-col items-center">
+                <div className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/30 mb-2">
+                  {gameState.gameType}
+                </div>
+                <h2 className="text-xl font-bold text-white">Sala de Espera</h2>
+              </div>
+
+              <div className="flex items-baseline gap-2">
+                <span className="text-5xl font-black text-white">{gameState.players.length}</span>
+                <span className="text-xl text-gray-500 font-bold">/ 4</span>
+              </div>
+
+              {gameState.players.length >= 2 && myPlayer?.id === gameState.players[0].id ? (
+                <button
+                  onClick={startGame}
+                  className="w-full py-4 bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-black font-black text-xl rounded-2xl shadow-[0_4px_0_rgb(161,98,7)] transition-all uppercase tracking-tight"
+                >
+                  INICIAR JOGO
+                </button>
+              ) : (
+                <div className="w-full py-4 px-6 bg-black/20 rounded-2xl border border-white/5 text-center">
+                  <p className="text-sm text-yellow-500/80 font-bold animate-pulse">
+                    {gameState.players.length < 2
+                      ? "Aguardando competidores..."
+                      : "Aguardando o anfitrião..."}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -409,8 +412,7 @@ export default function GameTable() {
 
       {/* Game Area */}
       <div className="flex-1 relative flex items-center justify-center">
-
-        {/* Opponents (Simplified layout for now) */}
+        {/* Opponents */}
         {gameState?.players.filter(p => p.id !== socket.id).map((player, idx) => (
           <div key={player.id} className="absolute top-10 transform -translate-x-1/2" style={{ left: `${(idx + 1) * 30}%` }}>
             <div className="flex flex-col items-center">
@@ -436,7 +438,6 @@ export default function GameTable() {
               className={`relative group cursor-pointer transition-transform ${canDraw ? 'hover:scale-105 ring-4 ring-yellow-400 rounded-lg' : 'opacity-80'}`}
             >
               <CardView isBack={true} />
-
               <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border border-white z-20">
                 {gameState.deckCount}
               </div>
@@ -480,60 +481,56 @@ export default function GameTable() {
       </div>
 
       {/* My Hand */}
-      {
-        myPlayer && (
-          <div className="h-56 md:h-72 bg-gradient-to-t from-black/90 to-transparent flex items-end justify-center pb-4 md:pb-8 px-2 md:px-4 relative z-20 w-full overflow-hidden">
-            <Reorder.Group
-              axis="x"
-              values={localHand}
-              onReorder={setLocalHand}
-              className="flex -space-x-8 md:-space-x-12 hover:-space-x-6 md:hover:-space-x-8 transition-all duration-300 p-4 pt-12 md:p-6 md:pt-16 overflow-x-auto w-full justify-center md:justify-center min-w-min no-scrollbar"
-              style={{ maxWidth: '100vw' }}
-            >
-              {localHand.map((card) => (
-                <Reorder.Item
-                  key={card.id}
-                  value={card}
-                  initial={{ y: 100, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  whileHover={{ y: -20, zIndex: 20 }}
-                  whileDrag={{ scale: 1.1, zIndex: 50 }}
-                  className={`relative flex-shrink-0 ${canDiscard ? 'cursor-pointer' : ''}`}
-                >
-                  <div onClick={() => handleDiscardCard(card.id)}>
-                    <CardView card={card} />
-                  </div>
-                  {canDiscard && (
-                    <div className="absolute inset-0 hover:bg-red-500/20 rounded-lg transition-colors pointer-events-none" />
-                  )}
-                </Reorder.Item>
-              ))}
-            </Reorder.Group>
-
-            {isMyTurn && (
-              <div className="absolute bottom-28 md:bottom-24 right-4 md:right-10 bg-black/60 p-3 md:p-4 rounded-lg backdrop-blur text-center flex flex-col gap-2 z-30">
-                <div className="text-yellow-400 font-bold text-lg md:text-xl mb-1">SUA VEZ</div>
-                <div className="text-xs md:text-sm text-white">
-                  {gameState?.turnPhase === 'draw' ? 'Compre uma carta' : 'Descarte uma carta'}
+      {myPlayer && (
+        <div className="h-56 md:h-72 bg-gradient-to-t from-black/90 to-transparent flex items-end justify-center pb-4 md:pb-8 px-2 md:px-4 relative z-20 w-full overflow-hidden">
+          <Reorder.Group
+            axis="x"
+            values={localHand}
+            onReorder={setLocalHand}
+            className="flex -space-x-8 md:-space-x-12 hover:-space-x-6 md:hover:-space-x-8 transition-all duration-300 p-4 pt-12 md:p-6 md:pt-16 overflow-x-auto w-full justify-center md:justify-center min-w-min no-scrollbar"
+            style={{ maxWidth: '100vw' }}
+          >
+            {localHand.map((card) => (
+              <Reorder.Item
+                key={card.id}
+                value={card}
+                initial={{ y: 100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                whileHover={{ y: -20, zIndex: 20 }}
+                whileDrag={{ scale: 1.1, zIndex: 50 }}
+                className={`relative flex-shrink-0 ${canDiscard ? 'cursor-pointer' : ''}`}
+              >
+                <div onClick={() => handleDiscardCard(card.id)}>
+                  <CardView card={card} />
                 </div>
+                {canDiscard && (
+                  <div className="absolute inset-0 hover:bg-red-500/20 rounded-lg transition-colors pointer-events-none" />
+                )}
+              </Reorder.Item>
+            ))}
+          </Reorder.Group>
 
-                <button
-                  onClick={handleDeclareVictory}
-                  className="mt-1 md:mt-2 px-3 md:px-4 py-1 md:py-2 bg-green-600 hover:bg-green-500 text-white font-bold text-sm md:text-base rounded shadow-lg animate-pulse"
-                >
-                  BATER!
-                </button>
+          {isMyTurn && (
+            <div className="absolute bottom-28 md:bottom-24 right-4 md:right-10 bg-black/60 p-3 md:p-4 rounded-lg backdrop-blur text-center flex flex-col gap-2 z-30">
+              <div className="text-yellow-400 font-bold text-lg md:text-xl mb-1">SUA VEZ</div>
+              <div className="text-xs md:text-sm text-white">
+                {gameState?.turnPhase === 'draw' ? 'Compre uma carta' : 'Descarte uma carta'}
               </div>
-            )}
-          </div>
-        )
-      }
-    </div >
+              <button
+                onClick={handleDeclareVictory}
+                className="mt-1 md:mt-2 px-3 md:px-4 py-1 md:py-2 bg-green-600 hover:bg-green-500 text-white font-bold text-sm md:text-base rounded shadow-lg animate-pulse"
+              >
+                BATER!
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
 function CardView({ card, isBack = false, onClick }: { card?: Card; isBack?: boolean; onClick?: () => void }) {
-  // Classic card back pattern using CSS
   const cardBackStyle = {
     backgroundImage: `
       repeating-linear-gradient(45deg, #8b0000 0, #8b0000 10px, #a52a2a 10px, #a52a2a 20px),
