@@ -316,11 +316,9 @@ export default function GameTable() {
           <div className="w-full flex justify-center h-48 md:h-64 relative">
             <Reorder.Group axis="x" values={localHand} onReorder={setLocalHand} className="flex -space-x-14 md:-space-x-20 pt-12 min-w-max">
               {localHand.map((card, idx) => {
-                const mid = (localHand.length - 1) / 2;
-                const offset = idx - mid;
-                const rotation = offset * 1.5; // Almost straight
-                const yPos = Math.abs(offset) * 1.5; // Very shallow curve
-                const zIndex = Math.round(localHand.length - Math.abs(offset)); // Center card on top
+                const rotation = 0; // Flat
+                const yPos = 0; // Flat
+                const zIndex = idx; // Linear stack
 
                 return (
                   <Reorder.Item key={card.id} value={card} initial={{ y: 200, opacity: 0 }} animate={{ y: yPos, rotate: rotation, opacity: 1 }} whileHover={{ y: yPos - 60, scale: 1.15, zIndex: 100 }} transition={{ type: 'spring', stiffness: 300, damping: 25 }} className="cursor-pointer active:cursor-grabbing" style={{ zIndex }}>
