@@ -310,7 +310,7 @@ export default function GameTable() {
 
   return (
     <div className="flex flex-col h-screen bg-green-800 text-white overflow-hidden relative">
-      {isPortrait && (
+      {isPortrait && gameState?.status === 'playing' && (
         <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-6 text-center lg:hidden">
           <div className="animate-bounce mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="yellow" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="rotate-90"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></svg>
@@ -336,10 +336,10 @@ export default function GameTable() {
       {/* Waiting Room Modal */}
       {gameState?.status === 'waiting' && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-md">
-          <div className="bg-green-900/95 p-8 rounded-[2.5rem] border-2 border-white/10 flex flex-col items-center gap-8 shadow-2xl max-w-sm w-full mx-4">
-            <div className="w-full flex flex-col items-center gap-3 text-center">
-              <span className="text-[11px] text-gray-400 uppercase tracking-[0.2em] font-bold">Código da Sala</span>
-              <div className="text-6xl font-mono font-black text-yellow-500 tracking-tighter bg-black/40 px-6 py-4 rounded-3xl border border-white/10 shadow-inner">
+          <div className="bg-green-900/95 p-4 rounded-[2rem] border-2 border-white/10 flex flex-col items-center gap-3 shadow-2xl max-w-sm w-full mx-4 overflow-y-auto max-h-[90dvh]">
+            <div className="w-full flex flex-col items-center gap-1 text-center">
+              <span className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-bold">Código da Sala</span>
+              <div className="text-4xl font-mono font-black text-yellow-500 tracking-tighter bg-black/40 px-5 py-3 rounded-2xl border border-white/10 shadow-inner">
                 {roomId}
               </div>
               <button
@@ -364,21 +364,21 @@ export default function GameTable() {
                 <h2 className="text-xl font-bold text-white">Sala de Espera</h2>
               </div>
 
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-black text-white">{gameState.players.length}</span>
-                <span className="text-xl text-gray-500 font-bold">/ 4</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-black text-white">{gameState.players.length}</span>
+                <span className="text-lg text-gray-500 font-bold">/ 4</span>
               </div>
 
               {gameState.players.length >= 2 && myPlayer?.id === gameState.players[0].id ? (
                 <button
                   onClick={startGame}
-                  className="w-full py-4 bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-black font-black text-xl rounded-2xl shadow-[0_4px_0_rgb(161,98,7)] transition-all uppercase tracking-tight"
+                  className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 active:scale-95 text-black font-black text-lg rounded-2xl shadow-[0_4px_0_rgb(161,98,7)] transition-all uppercase tracking-tight"
                 >
                   INICIAR JOGO
                 </button>
               ) : (
-                <div className="w-full py-4 px-6 bg-black/20 rounded-2xl border border-white/5 text-center">
-                  <p className="text-sm text-yellow-500/80 font-bold animate-pulse">
+                <div className="w-full py-3 px-6 bg-black/20 rounded-2xl border border-white/5 text-center">
+                  <p className="text-xs text-yellow-500/80 font-bold animate-pulse">
                     {gameState.players.length < 2
                       ? "Aguardando competidores..."
                       : "Aguardando o anfitrião..."}
