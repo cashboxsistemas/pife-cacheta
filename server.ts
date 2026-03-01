@@ -4,14 +4,19 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import { Deck } from './server/Deck';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { GameState, Player, Card } from './src/types/game';
 import { Rules } from './server/game/Rules';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
   const httpServer = createServer(app);
   const io = new Server(httpServer);
-  const PORT = 3000;
+  const PORT = 3005;
 
   // Enhanced Room Interface
   interface Room {
@@ -34,8 +39,8 @@ async function startServer() {
 
     socket.on('create_room', ({ type, playerName }: { type: 'pife' | 'cacheta', playerName: string }) => {
       const roomId = uuidv4().slice(0, 6).toUpperCase();
-      const name = playerName || `Player ${roomId.slice(0,2)}`;
-      
+      const name = playerName || `Player ${roomId.slice(0, 2)}`;
+
       // Initialize Room
       rooms[roomId] = {
         id: roomId,
@@ -61,15 +66,15 @@ async function startServer() {
       socket.emit('room_created', roomId);
       // Send initial state update
       emitGameState(io, roomId);
-      
+
       console.log(`Room ${roomId} created for ${type} by ${name}`);
     });
 
     socket.on('join_room', ({ roomId, playerName }: { roomId: string, playerName: string }) => {
       const room = rooms[roomId];
       if (room && room.players.length < 4 && room.status === 'waiting') {
-        const name = playerName || `Player ${socket.id.slice(0,4)}`;
-        
+        const name = playerName || `Player ${socket.id.slice(0, 4)}`;
+
         room.players.push(socket.id);
         room.playerData[socket.id] = {
           id: socket.id,
@@ -78,7 +83,7 @@ async function startServer() {
           isTurn: false,
           score: 0
         };
-        
+
         socket.join(roomId);
         io.to(roomId).emit('player_joined', room.players.length);
         emitGameState(io, roomId);
@@ -99,7 +104,7 @@ async function startServer() {
     socket.on('draw_card', (roomId: string) => {
       const room = rooms[roomId];
       if (!room || room.status !== 'playing') return;
-      
+
       const currentPlayerId = room.players[room.currentPlayerIndex];
       if (socket.id !== currentPlayerId) return; // Not your turn
       if (room.turnPhase !== 'draw') return; // Wrong phase
@@ -148,15 +153,15 @@ async function startServer() {
 
       const player = room.playerData[currentPlayerId];
       const cardIndex = player.hand.findIndex(c => c.id === cardId);
-      
+
       if (cardIndex !== -1) {
         const [card] = player.hand.splice(cardIndex, 1);
         room.discardPile.push(card);
-        
+
         // Advance turn
         room.currentPlayerIndex = (room.currentPlayerIndex + 1) % room.players.length;
         room.turnPhase = 'draw';
-        
+
         // Update isTurn flags
         room.players.forEach((pid, idx) => {
           room.playerData[pid].isTurn = idx === room.currentPlayerIndex;
@@ -174,7 +179,7 @@ async function startServer() {
       if (socket.id !== currentPlayerId) return; // Not your turn
 
       const player = room.playerData[currentPlayerId];
-      
+
       // Validate hand
       if (Rules.isWinningHand(player.hand, room.vira)) {
         room.status = 'finished';
@@ -182,7 +187,7 @@ async function startServer() {
         room.players.forEach(pid => {
           room.playerData[pid].hand.forEach(c => c.isHidden = false);
         });
-        
+
         io.to(roomId).emit('game_over', { winnerId: currentPlayerId, winnerName: player.name });
         emitGameState(io, roomId);
       } else {
@@ -224,7 +229,7 @@ async function startServer() {
     room.discardPile = [];
     room.currentPlayerIndex = 0;
     room.turnPhase = 'draw';
-    
+
     // Set Vira (Joker indicator)
     room.vira = room.deck.draw();
     if (room.vira) room.vira.isHidden = false;
@@ -233,7 +238,7 @@ async function startServer() {
     const handSize = 9;
     room.players.forEach((playerId, index) => {
       const player = room.playerData[playerId];
-      player.hand = room.deck.drawMultiple(handSize).map(c => ({...c, isHidden: false})); // Reveal to owner
+      player.hand = room.deck.drawMultiple(handSize).map(c => ({ ...c, isHidden: false })); // Reveal to owner
       player.isTurn = index === 0;
     });
   }
@@ -284,8 +289,12 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    // Serve static files in production (placeholder)
+    // Serve static files in production
     app.use(express.static('dist'));
+    // Fallback for SPA routing
+    app.get('*', (req, res) => {
+      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+    });
   }
 
   httpServer.listen(PORT, '0.0.0.0', () => {

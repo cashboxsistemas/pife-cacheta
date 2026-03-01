@@ -26,4 +26,5 @@ export interface GameState {
   status: 'waiting' | 'playing' | 'finished';
   gameType: 'pife' | 'cacheta';
   turnPhase: 'draw' | 'discard';
+  vira?: Card;
 }

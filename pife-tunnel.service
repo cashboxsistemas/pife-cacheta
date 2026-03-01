@@ -1,0 +1,14 @@
+[Unit]
+Description=Cloudflare Tunnel for Pife/Cacheta
+After=network.target pife-cacheta.service
+
+[Service]
+Type=simple
+User=mizael-rocha
+Group=mizael-rocha
+ExecStart=/usr/bin/cloudflared tunnel --config /home/mizael-rocha/.cloudflared/pife-cacheta.yml run
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
