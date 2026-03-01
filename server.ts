@@ -230,9 +230,13 @@ async function startServer() {
     room.currentPlayerIndex = 0;
     room.turnPhase = 'draw';
 
-    // Set Vira (Joker indicator)
-    room.vira = room.deck.draw();
-    if (room.vira) room.vira.isHidden = false;
+    // Set Vira (Joker indicator) only for Cacheta
+    if (room.gameType === 'cacheta') {
+      room.vira = room.deck.draw();
+      if (room.vira) room.vira.isHidden = false;
+    } else {
+      room.vira = undefined;
+    }
 
     // Deal cards (9 cards for Pife usually)
     const handSize = 9;

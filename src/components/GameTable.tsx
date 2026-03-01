@@ -319,6 +319,11 @@ export default function GameTable() {
         <div className="bg-black/40 backdrop-blur-md p-3 rounded-lg pointer-events-auto">
           <div className="text-xs text-gray-400 uppercase tracking-wider">Sala</div>
           <div className="text-xl font-mono font-bold text-yellow-400">{roomId}</div>
+          {gameState && (
+            <div className="text-[10px] text-emerald-400 font-bold uppercase mt-1 border-t border-white/10 pt-1">
+              {gameState.gameType}
+            </div>
+          )}
         </div>
 
         {gameState?.status === 'waiting' && (
